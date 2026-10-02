@@ -1,0 +1,11 @@
+#!/bin/sh
+
+. /usr/lib/smhub/service-helpers.sh
+
+pkg_service_remove "netconfig" "$1"
+
+if [ "$1" = "remove" ]; then
+    rm -f /opt/share/services/netconfig.autostart
+fi
+
+exit 0

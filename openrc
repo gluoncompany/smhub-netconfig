@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+description="Network Config service"
+
+supervisor="supervise-daemon"
+command="/usr/bin/python3"
+command_args="/opt/netconfig/server.py"
+pidfile="/var/run/netconfig.pid"
+output_log="/var/log/netconfig.log"
+error_log="/var/log/netconfig.log"
+
+export NC_PORT=8097
+export NC_DATA=/opt/netconfig/data
+
+depend() {
+    need localmount
+    after api-ready networkmanager
+    provide netconfig
+}

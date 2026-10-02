@@ -1,0 +1,7 @@
+Package: netconfig
+Version: 1.0.3-1
+Architecture: all
+Maintainer: local
+Description: Network configuration - static IP or DHCP per interface, Wi-Fi on/off and connection, smhub.json export, with automatic rollback
+Priority: optional
+Required-OS-Version: 1.0.0

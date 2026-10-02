@@ -1,0 +1,7 @@
+#!/bin/sh
+
+. /usr/lib/smhub/service-helpers.sh
+
+pkg_service_stop "netconfig"
+
+exit 0

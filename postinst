@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. /usr/lib/smhub/service-helpers.sh
+
+PKG_NAME="netconfig"
+SERVICE_NAME="netconfig"
+AUTOSTART_FILE="/opt/share/services/${SERVICE_NAME}.autostart"
+
+mkdir -p /opt/netconfig/data
+pkg_openrc_install "${PKG_NAME}" "${SERVICE_NAME}" "${AUTOSTART_FILE}"
+touch "${AUTOSTART_FILE}"
+rc-service "${SERVICE_NAME}" restart 2>/dev/null || rc-service "${SERVICE_NAME}" start 2>/dev/null || true
+
+exit 0

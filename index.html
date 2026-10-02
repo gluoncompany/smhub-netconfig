@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Config</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--fg:#1d2330;--mut:#6b7385;--line:#e3e6ec;--good:#2e9d5b;--warn:#c98a00;--bad:#d9534f;--acc:#2f6fdf;--chip:#eef2fb}
+@media (prefers-color-scheme:dark){:root{--bg:#1e1f22;--card:#27282c;--fg:#e8eaed;--mut:#9aa0ab;--line:#3a3c42;--acc:#5b8ff0;--chip:#2f3440}}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:15px;margin:0}
+h3{font-size:13px;margin:14px 0 6px;color:var(--mut);font-weight:600}
+.sub{color:var(--mut);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer}
+button.sec{background:transparent;color:var(--acc);border:1px solid var(--line)}
+button.danger{background:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input[type=text],input[type=password]{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+input:disabled{opacity:.55}
+label.f{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-shrink:0}
+.lang button{background:transparent;color:var(--mut);border-radius:0;padding:6px 10px;font-size:12px;font-weight:600}
+.lang button[aria-pressed="true"]{background:var(--acc);color:#fff}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:var(--chip);color:var(--mut);margin-left:6px;vertical-align:1px}
+.chip.on{background:var(--good);color:#fff}
+.chip.you{background:var(--acc);color:#fff}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:3px 10px;font-size:13px;margin-top:10px}
+.kv div:nth-child(odd){color:var(--mut)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:12px}
+.seg label{padding:6px 14px;cursor:pointer;font-size:13px}
+.seg input{display:none}
+.seg input:checked+span{color:var(--acc);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.banner{border-radius:10px;padding:14px 16px;margin-bottom:16px;border:1px solid}
+.banner.warn{background:color-mix(in srgb,var(--warn) 12%,var(--card));border-color:var(--warn)}
+.banner.ok{background:color-mix(in srgb,var(--good) 12%,var(--card));border-color:var(--good)}
+.banner.bad{background:color-mix(in srgb,var(--bad) 12%,var(--card));border-color:var(--bad)}
+.banner b.big{font-size:22px;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--mut);margin:8px 0 0}
+.err{color:var(--bad);font-size:13px;margin-top:8px;font-weight:600}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{color:var(--mut);font-weight:600;font-size:12px}
+tr.pick{cursor:pointer}
+tr.pick:hover td{background:var(--chip)}
+a{color:var(--acc)}
+a.btn{display:inline-block;background:var(--acc);color:#fff;border-radius:8px;padding:9px 16px;text-decoration:none;font-size:14px}
+@media (max-width:520px){.two{grid-template-columns:1fr}.kv{grid-template-columns:90px 1fr}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1 data-i18n="title"></h1>
+    <p class="sub" data-i18n="subtitle"></p>
+  </div>
+  <div class="lang" role="group" aria-label="Language"><button data-lang="es">ES</button><button data-lang="en">EN</button></div>
+</header>
+
+<div id="pending"></div>
+<div id="event"></div>
+
+<div class="grid" id="cards">
+  <div id="ifaces" style="display:contents"></div>
+  <div class="card" id="wifi">
+    <h2 data-i18n="wifi_connect_title"></h2>
+    <div class="row"><button class="sec" id="scanBtn" data-i18n="scan"></button><span class="note" id="scanMsg"></span></div>
+    <table id="scanTable" hidden><thead><tr><th>SSID</th><th data-i18n="signal"></th><th data-i18n="security"></th><th data-i18n="channel"></th></tr></thead><tbody></tbody></table>
+    <label class="f">SSID</label><input type="text" id="ssid" maxlength="32">
+    <label class="f" data-i18n="password"></label><input type="password" id="psk" maxlength="63">
+    <div class="row" style="margin-top:8px"><label class="note" style="margin:0"><input type="checkbox" id="hidden"> <span data-i18n="hidden"></span></label></div>
+    <div class="row" style="margin-top:10px"><button id="connectBtn" data-i18n="connect"></button></div>
+    <div class="err" id="wifiErr"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="export_title"></h2>
+    <p class="note" data-i18n="export_desc"></p>
+    <div class="row" style="margin-top:10px"><label class="note" style="margin:0"><input type="checkbox" id="withPsk"> <span data-i18n="export_psk"></span></label></div>
+    <pre class="mono" id="jsonPreview" style="background:var(--chip);padding:10px;border-radius:8px;overflow:auto;max-height:260px"></pre>
+    <div class="row"><button id="dlBtn" data-i18n="download"></button></div>
+    <p class="note" data-i18n="export_note"></p>
+  </div>
+</div>
+</main>
+<script>
+const I18N = {
+  es: {
+    title: 'Configuración de red', subtitle: 'IP fija o DHCP para cada interfaz, Wi-Fi y exportación a tarjeta SD. Cada cambio se revierte solo si no lo confirmas.',
+    you: 'estás conectado por aquí', connected: 'conectado', disconnected: 'desconectado', unavailable: 'no disponible', unmanaged: 'sin gestionar', inactive: 'inactiva',
+    device: 'Interfaz', mac: 'MAC', ip: 'IP actual', gateway: 'Puerta de enlace', dns: 'DNS', profile: 'Perfil',
+    dhcp: 'DHCP (automática)', static: 'IP fija', address: 'Dirección IP / máscara (ej. 192.168.1.10/24)', gw_label: 'Puerta de enlace', dns_label: 'DNS (separados por espacio o coma)',
+    apply: 'Aplicar', none: '—',
+    warn_self_dhcp: 'Estás conectado por esta interfaz. Con DHCP no sabrás la nueva IP: confírmalo desde otra interfaz o el cambio se revertirá.',
+    warn_self_static: 'Estás conectado por esta interfaz. Después de aplicar, abre la nueva dirección para confirmar.',
+    wifi_title: 'Wi-Fi', radio_on: 'Wi-Fi activada', radio_off: 'Wi-Fi desactivada', turn_off: 'Desactivar Wi-Fi', turn_on: 'Activar Wi-Fi',
+    wifi_connect: 'Conectar a una red', wifi_connect_title: 'Conectar a una red Wi-Fi', scan: 'Buscar redes', scanning: 'Buscando…', signal: 'Señal', security: 'Seguridad', channel: 'Canal', open_net: 'abierta',
+    password: 'Contraseña (vacía si es abierta)', hidden: 'Red oculta', connect: 'Conectar',
+    export_title: 'Exportar smhub.json (tarjeta SD)', export_desc: 'Genera el archivo de configuración que SMHUB OS aplica al arrancar si encuentra una tarjeta SD: nombre del equipo, eth0 y Wi-Fi.',
+    export_psk: 'Incluir la contraseña de la Wi-Fi', download: 'Descargar smhub.json',
+    export_note: 'Copia el archivo en la raíz de la tarjeta SD. Si incluyes la contraseña, guarda el archivo en un lugar seguro.',
+    pend_title: 'Cambio pendiente de confirmar', pend_left: 'Se revertirá en', seconds: 's',
+    pend_open: 'Si la dirección ha cambiado, abre la nueva y confirma desde allí:', pend_app: 'esta app', pend_panel: 'panel del hub',
+    goto: 'Ir a {0}', back_title: 'Se ha restaurado la configuración anterior: el hub vuelve a estar en {0}.', lost_conn: 'Se ha perdido la conexión con esta dirección (normal si la IP ha cambiado). Abre la nueva dirección y confirma desde allí.',
+    confirm: 'Confirmar cambio', revert_now: 'Revertir ahora', applying: 'Aplicando cambio…',
+    s_ipv4: '{0}: {1}', s_dhcp: 'DHCP', s_static: 'IP fija {0}', s_radio_on: 'Activar Wi-Fi', s_radio_off: 'Desactivar Wi-Fi', s_wifi: 'Conectar Wi-Fi a «{0}»',
+    ev_confirmed: 'Cambio confirmado ({0}).', ev_reverted: 'Cambio revertido ({0}).', ev_reverted_timeout: 'No se confirmó a tiempo: se ha restaurado la configuración anterior ({0}).',
+    ev_reverted_restart: 'El servicio se reinició con un cambio sin confirmar: se ha restaurado la configuración anterior ({0}).',
+    err_nmcli: 'NetworkManager devolvió un error: {0}', err_no_conn: 'No existe el perfil {0}', err_method: 'Método no válido', err_address: 'Dirección no válida: {0}. Usa el formato 192.168.1.10/24',
+    err_gateway: 'Puerta de enlace no válida: {0}', err_gateway_net: 'La puerta de enlace {0} no está en la red {1}', err_dns: 'DNS no válido: {0}', err_pending: 'Hay un cambio pendiente: confírmalo o reviértelo primero',
+    locked: 'Configurada por el sistema (modo {0}): no se puede cambiar desde aquí.', err_locked: 'Este perfil está en modo {0} y no se puede cambiar desde aquí',
+    err_ssid: 'SSID no válido', err_psk: 'La contraseña debe tener entre 8 y 63 caracteres', err_no_wifi: 'No hay interfaz Wi-Fi', err_generic: 'Error: {0}', err_not_found: 'No encontrado', err_conn: 'Sin conexión con el hub'
+  },
+  en: {
+    title: 'Network configuration', subtitle: 'Static IP or DHCP per interface, Wi-Fi and SD-card export. Every change is reverted automatically unless you confirm it.',
+    you: 'you are connected here', connected: 'connected', disconnected: 'disconnected', unavailable: 'unavailable', unmanaged: 'unmanaged', inactive: 'inactive',
+    device: 'Interface', mac: 'MAC', ip: 'Current IP', gateway: 'Gateway', dns: 'DNS', profile: 'Profile',
+    dhcp: 'DHCP (automatic)', static: 'Static IP', address: 'IP address / mask (e.g. 192.168.1.10/24)', gw_label: 'Gateway', dns_label: 'DNS (space or comma separated)',
+    apply: 'Apply', none: '—',
+    warn_self_dhcp: 'You are connected through this interface. With DHCP you will not know the new IP: confirm from another interface or the change will be reverted.',
+    warn_self_static: 'You are connected through this interface. After applying, open the new address to confirm.',
+    wifi_title: 'Wi-Fi', radio_on: 'Wi-Fi enabled', radio_off: 'Wi-Fi disabled', turn_off: 'Disable Wi-Fi', turn_on: 'Enable Wi-Fi',
+    wifi_connect: 'Connect to a network', wifi_connect_title: 'Connect to a Wi-Fi network', scan: 'Scan networks', scanning: 'Scanning…', signal: 'Signal', security: 'Security', channel: 'Channel', open_net: 'open',
+    password: 'Password (empty for open networks)', hidden: 'Hidden network', connect: 'Connect',
+    export_title: 'Export smhub.json (SD card)', export_desc: 'Generates the configuration file that SMHUB OS applies at boot when an SD card is present: hostname, eth0 and Wi-Fi.',
+    export_psk: 'Include the Wi-Fi password', download: 'Download smhub.json',
+    export_note: 'Copy the file to the root of the SD card. If you include the password, keep the file somewhere safe.',
+    pend_title: 'Change waiting for confirmation', pend_left: 'It will be reverted in', seconds: 's',
+    pend_open: 'If the address changed, open the new one and confirm there:', pend_app: 'this app', pend_panel: 'hub panel',
+    goto: 'Go to {0}', back_title: 'The previous configuration was restored: the hub is back at {0}.', lost_conn: 'Connection to this address was lost (expected if the IP changed). Open the new address and confirm there.',
+    confirm: 'Confirm change', revert_now: 'Revert now', applying: 'Applying change…',
+    s_ipv4: '{0}: {1}', s_dhcp: 'DHCP', s_static: 'static IP {0}', s_radio_on: 'Enable Wi-Fi', s_radio_off: 'Disable Wi-Fi', s_wifi: 'Connect Wi-Fi to “{0}”',
+    ev_confirmed: 'Change confirmed ({0}).', ev_reverted: 'Change reverted ({0}).', ev_reverted_timeout: 'Not confirmed in time: the previous configuration has been restored ({0}).',
+    ev_reverted_restart: 'The service restarted with an unconfirmed change: the previous configuration has been restored ({0}).',
+    err_nmcli: 'NetworkManager returned an error: {0}', err_no_conn: 'Profile {0} does not exist', err_method: 'Invalid method', err_address: 'Invalid address: {0}. Use the format 192.168.1.10/24',
+    err_gateway: 'Invalid gateway: {0}', err_gateway_net: 'Gateway {0} is not in network {1}', err_dns: 'Invalid DNS: {0}', err_pending: 'A change is pending: confirm or revert it first',
+    locked: 'Configured by the system ({0} mode): not editable here.', err_locked: 'This profile is in {0} mode and cannot be changed here',
+    err_ssid: 'Invalid SSID', err_psk: 'The password must be 8 to 63 characters long', err_no_wifi: 'No Wi-Fi interface', err_generic: 'Error: {0}', err_not_found: 'Not found', err_conn: 'No connection to the hub'
+  }
+};
+function pickLang() {
+  try { const s = localStorage.getItem('nc-lang'); if (I18N[s]) return s; } catch (e) {}
+  return (navigator.language || 'es').toLowerCase().startsWith('es') ? 'es' : 'en';
+}
+let lang = pickLang();
+const t = (k, ...a) => { const v = (I18N[lang] || I18N.es)[k]; return v === undefined ? k : v.replace(/\{(\d)\}/g, (m, i) => a[i] !== undefined ? a[i] : m); };
+const tm = e => e && e.key ? t(e.key, ...(e.args || [])) : '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+let S = null, timer = null, dirty = {};
+
+async function api(path, body) {
+  const opt = body === undefined ? {} : {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)};
+  const r = await fetch(path, opt);
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw j.error || {key: 'err_generic', args: [r.status]};
+  return j;
+}
+
+function applyStatic() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+}
+
+function summaryText(s) {
+  if (!s) return '';
+  if (s.action === 'ipv4') return t('s_ipv4', s.name, s.method === 'auto' ? t('s_dhcp') : t('s_static', s.address));
+  if (s.action === 'radio') return t(s.enabled ? 's_radio_on' : 's_radio_off');
+  if (s.action === 'wifi') return t('s_wifi', s.name);
+  return '';
+}
+
+function renderPending() {
+  const p = S.pending, box = $('pending');
+  if (!p) { if (!backIp) box.innerHTML = ''; return; }
+  const goto = (p.new_ips || []).find(ip => ip !== location.hostname);
+  const links = (p.new_ips || []).map(ip => `<a href="http://${esc(ip)}:${location.port}/" target="_blank">http://${esc(ip)}:${location.port}/</a> (${t('pend_app')}) · <a href="http://${esc(ip)}/" target="_blank">http://${esc(ip)}/</a> (${t('pend_panel')})`).join('<br>');
+  box.innerHTML = `<div class="banner warn"><div class="between"><div><b>${t('pend_title')}</b>: ${esc(summaryText(p.summary))}<br>${t('pend_left')} <b class="big" id="cd">${p.remaining}</b> ${t('seconds')}</div>
+    <div class="row">${goto ? `<a class="btn" href="http://${esc(goto)}/#/netconfig" target="_top">${t('goto', esc(goto))}</a>` : ''}<button id="cfBtn" ${goto ? 'class="sec"' : ''}>${t('confirm')}</button><button class="sec" id="rvBtn">${t('revert_now')}</button></div></div>
+    ${links ? `<p class="note">${t('pend_open')}<br>${links}</p>` : ''}</div>`;
+  $('cfBtn').onclick = async () => { try { await api('api/confirm', {id: p.id}); } catch (e) {} refresh(); };
+  $('rvBtn').onclick = async () => { try { await api('api/revert', {id: p.id}); } catch (e) {} if (!showBack(p)) setTimeout(refresh, 1500); };
+}
+
+function renderEvent() {
+  const e = S.event;
+  $('event').innerHTML = e ? `<div class="banner ${e.key === 'ev_confirmed' ? 'ok' : 'bad'}">${esc(tm(e))}</div>` : '';
+}
+
+function stateLabel(st) { const k = (st || '').split(' ')[0]; return I18N[lang][k] ? t(k) : st; }
+
+function renderIfaces() {
+  const devs = {}; S.devices.forEach(d => devs[d.device] = d);
+  const hasWifi = S.devices.some(d => d.type === 'wifi');
+  const list = S.connections.filter(c => c.device || devs[c.ifname] || (c.type === 'wifi' && hasWifi));
+  const wl = list.filter(c => c.type === 'wifi');
+  const toggleUuid = (wl.find(c => c.device) || wl[0] || {}).uuid;
+  const html = list.map(c => {
+    const d = devs[c.device] || devs[c.ifname] || null;
+    const dev = c.device || c.ifname || '';
+    const isActive = !!c.device;
+    const you = isActive && d && d.client;
+    const ips = d && isActive ? d.ip4 : [];
+    const f = dirty[c.uuid] || {method: c.method === 'manual' ? 'manual' : 'auto',
+      address: c.addresses[0] || ips[0] || '', gateway: c.gateway || (d && isActive ? d.gateway : '') || '',
+      dns: (c.dns.length ? c.dns : (d && isActive ? d.dns : [])).join(' ')};
+    const locked = !['auto', 'manual'].includes(c.method);
+    const title = c.type === 'wifi' ? `Wi-Fi · ${esc(c.ssid || c.name)}` : esc(c.name);
+    return `<div class="card" data-uuid="${esc(c.uuid)}">
+      <div class="between"><h2>${title}<span class="chip ${isActive ? 'on' : ''}">${isActive ? stateLabel(d ? d.state : 'connected') : t('inactive')}</span>${you ? `<span class="chip you">${t('you')}</span>` : ''}</h2></div>
+      <div class="kv"><div>${t('device')}</div><div class="mono">${esc(dev) || t('none')}</div>
+        <div>${t('mac')}</div><div class="mono">${esc(d ? d.mac : '') || t('none')}</div>
+        <div>${t('ip')}</div><div class="mono">${ips.length ? ips.map(esc).join(', ') : t('none')}</div>
+        <div>${t('gateway')}</div><div class="mono">${esc(d && isActive ? d.gateway : '') || t('none')}</div>
+        <div>${t('dns')}</div><div class="mono">${d && isActive && d.dns.length ? d.dns.map(esc).join(', ') : t('none')}</div></div>
+      ${locked ? `<p class="note">${t('locked', esc(c.method))}</p>` : ''}
+      <div class="seg" ${locked ? 'hidden' : ''}><label><input type="radio" name="m-${esc(c.uuid)}" value="auto" ${f.method === 'auto' ? 'checked' : ''}><span>${t('dhcp')}</span></label><label><input type="radio" name="m-${esc(c.uuid)}" value="manual" ${f.method === 'manual' ? 'checked' : ''}><span>${t('static')}</span></label></div>
+      <div class="st" ${f.method === 'manual' ? '' : 'hidden'}>
+        <label class="f">${t('address')}</label><input type="text" class="a mono" value="${esc(f.address)}">
+        <div class="two"><div><label class="f">${t('gw_label')}</label><input type="text" class="g mono" value="${esc(f.gateway)}"></div>
+        <div><label class="f">${t('dns_label')}</label><input type="text" class="d mono" value="${esc(f.dns)}"></div></div>
+      </div>
+      ${you ? `<p class="note warnself"></p>` : ''}
+      <div class="row" style="margin-top:12px" ${locked ? 'hidden' : ''}><button class="ap" ${S.pending ? 'disabled' : ''}>${t('apply')}</button></div>
+      <div class="err"></div>
+      ${c.uuid === toggleUuid ? `<div class="row" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><button class="sec" id="radioBtn"></button><span class="note" id="radioState" style="margin:0"></span></div>` : ''}
+    </div>`;
+  }).join('');
+  $('ifaces').innerHTML = html;
+  document.querySelectorAll('#ifaces .card').forEach(card => {
+    const uuid = card.dataset.uuid;
+    const read = () => ({method: card.querySelector('input[type=radio]:checked').value, address: card.querySelector('.a').value.trim(),
+      gateway: card.querySelector('.g').value.trim(), dns: card.querySelector('.d').value.trim()});
+    const upd = (ev) => {
+      const v = read(); if (ev) dirty[uuid] = v;
+      card.querySelector('.st').hidden = v.method !== 'manual';
+      const w = card.querySelector('.warnself'); if (w) w.textContent = t(v.method === 'auto' ? 'warn_self_dhcp' : 'warn_self_static');
+    };
+    card.querySelectorAll('input').forEach(i => i.addEventListener('input', upd));
+    card.querySelectorAll('input[type=radio]').forEach(i => i.addEventListener('change', upd));
+    upd();
+    card.querySelector('.ap').onclick = async () => {
+      const v = read(); card.querySelector('.err').textContent = '';
+      try { const r = await api('api/ipv4', Object.assign({uuid}, v)); delete dirty[uuid]; onPending(r.pending); }
+      catch (e) { card.querySelector('.err').textContent = tm(e); }
+    };
+  });
+}
+
+function renderWifi() {
+  const rb = $('radioBtn');
+  if (rb) {
+    $('radioState').textContent = t(S.wifi_enabled ? 'radio_on' : 'radio_off');
+    rb.textContent = t(S.wifi_enabled ? 'turn_off' : 'turn_on');
+    rb.disabled = !!S.pending;
+    rb.onclick = radioClick;
+  }
+  $('connectBtn').disabled = !!S.pending || !S.wifi_radio;
+  $('scanBtn').disabled = !S.wifi_radio;
+}
+
+async function renderJson() {
+  try { const r = await fetch('api/smhub.json' + ($('withPsk').checked ? '?password=1' : '')); $('jsonPreview').textContent = await r.text(); } catch (e) {}
+}
+
+function render() {
+  if (!S) return;
+  renderPending(); renderEvent(); renderIfaces(); renderWifi();
+  clearInterval(timer);
+  if (S.pending) {
+    let left = S.pending.remaining;
+    timer = setInterval(() => { left = Math.max(0, left - 1); const el = $('cd'); if (el) el.textContent = left; if (left === 0) { clearInterval(timer); if (!showBack(S.pending)) setTimeout(refresh, 3000); } }, 1000);
+  }
+}
+
+let backIp = null;
+function showBack(p) {
+  const ip = p && (p.old_ips || []).find(x => x !== location.hostname);
+  if (!ip || !(p.new_ips || []).length) return false;
+  backIp = ip; S.pending = null; clearInterval(timer);
+  $('event').innerHTML = '';
+  $('pending').innerHTML = `<div class="banner warn"><div class="between"><div>${esc(t('back_title', ip))}</div><a class="btn" href="http://${esc(ip)}/#/netconfig" target="_top">${t('goto', esc(ip))}</a></div></div>`;
+  return true;
+}
+
+function onPending(p) {
+  if (!p) { refresh(); return; }
+  backIp = null; S.pending = p; S.event = null; render();
+  setTimeout(refresh, 6000);
+}
+
+async function refresh() {
+  try { S = await api('api/state'); render(); renderJson(); }
+  catch (e) {
+    if (backIp) return;
+    if (S && S.pending) { $('event').innerHTML = `<div class="banner bad">${esc(t('lost_conn'))}</div>`; setTimeout(refresh, 5000); }
+    else $('event').innerHTML = `<div class="banner bad">${esc(t('err_conn'))}</div>`;
+  }
+}
+
+const radioClick = async () => { try { const r = await api('api/wifi/radio', {enabled: !S.wifi_enabled}); onPending(r.pending); } catch (e) { $('wifiErr').textContent = tm(e); refresh(); } };
+$('scanBtn').onclick = async () => {
+  $('scanMsg').textContent = t('scanning'); $('scanBtn').disabled = true;
+  try {
+    const r = await api('api/wifi/scan'); const tb = $('scanTable').querySelector('tbody');
+    tb.innerHTML = r.networks.map(n => `<tr class="pick" data-ssid="${esc(n.ssid)}"><td>${n.in_use ? '● ' : ''}${esc(n.ssid)}</td><td>${n.signal}%</td><td>${esc(n.security || t('open_net'))}</td><td>${esc(n.channel)}</td></tr>`).join('');
+    tb.querySelectorAll('tr').forEach(tr => tr.onclick = () => { $('ssid').value = tr.dataset.ssid; $('psk').focus(); });
+    $('scanTable').hidden = false; $('scanMsg').textContent = '';
+  } catch (e) { $('scanMsg').textContent = tm(e); }
+  $('scanBtn').disabled = false;
+};
+$('connectBtn').onclick = async () => {
+  $('wifiErr').textContent = '';
+  try { const r = await api('api/wifi/connect', {ssid: $('ssid').value, password: $('psk').value, hidden: $('hidden').checked}); $('psk').value = ''; onPending(r.pending); }
+  catch (e) { $('wifiErr').textContent = tm(e); }
+};
+$('withPsk').onchange = renderJson;
+$('dlBtn').onclick = () => { location.href = 'api/smhub.json' + ($('withPsk').checked ? '?password=1' : ''); };
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { lang = b.dataset.lang; try { localStorage.setItem('nc-lang', lang); } catch (e) {} applyStatic(); render(); });
+
+applyStatic(); refresh();
+setInterval(() => { if (!document.activeElement || !document.activeElement.matches('input')) refresh(); }, 15000);
+</script>
+</body>
+</html>
