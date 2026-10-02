@@ -85,7 +85,8 @@ def get_state(client_ip=None):
     devices = {}
     for line in nm("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device").splitlines():
         p = split_terse(line)
-        if len(p) >= 4 and p[1] in ("ethernet", "wifi"):
+        # skip unmanaged Wi-Fi interfaces (e.g. ap0 from the wifi-ap app): they are not ours to touch
+        if len(p) >= 4 and p[1] in ("ethernet", "wifi") and not (p[1] == "wifi" and p[2] == "unmanaged"):
             devices[p[0]] = {"device": p[0], "type": p[1], "state": p[2], "active": p[3]}
     for dev, d in devices.items():
         info = fields(nm("-t", "-f", "GENERAL.HWADDR,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", dev, check=False))
@@ -296,10 +297,10 @@ def set_ipv4(body):
 def wifi_info():
     """Wi-Fi device, active profile and all Wi-Fi profiles with their autoconnect flag."""
     wdev, active = None, None
-    for line in nm("-t", "-f", "DEVICE,TYPE,CONNECTION", "device").splitlines():
+    for line in nm("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device").splitlines():
         p = split_terse(line)
-        if len(p) >= 3 and p[1] == "wifi" and not wdev:
-            wdev, active = p[0], (p[2] or None)
+        if len(p) >= 4 and p[1] == "wifi" and p[2] != "unmanaged" and not wdev:
+            wdev, active = p[0], (p[3] or None)
     profiles = []
     for line in nm("-t", "-f", "NAME,UUID,TYPE,AUTOCONNECT", "connection", "show").splitlines():
         p = split_terse(line)
